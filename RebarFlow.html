@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>WebCAD Rebar 2025 - Armaduras Centralizadas</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; }
+        canvas { display: block; cursor: crosshair; }
+        .panel { 
+            position: absolute; top: 10px; left: 10px; 
+            background: rgba(25, 25, 25, 0.95); padding: 15px; border-radius: 8px; 
+            border: 1px solid #444; width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 100;
+        }
+        h2 { font-size: 14px; margin: 0 0 12px 0; color: #00bcff; text-transform: uppercase; }
+        .input-group { margin-bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
+        label { font-size: 11px; color: #999; font-weight: bold; }
+        input, select, button { padding: 8px; border-radius: 4px; border: 1px solid #333; background: #252525; color: white; font-size: 13px; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { cursor: pointer; font-weight: bold; border: none; transition: 0.2s; margin-top: 5px; }
+        .btn-draw { background: #007bff; color: white; padding: 12px; }
+        .btn-draw:hover { background: #0056b3; }
+        .stats { margin-top: 15px; padding: 10px; background: #222; border-radius: 4px; font-size: 12px; border-left: 3px solid #00ff00; }
+        b { color: #00ff00; font-family: monospace; }
+    </style>
+</head>
+<body>
+
+<div class="panel">
+    <h2>Detalhamento 2025</h2>
+    <div class="input-group">
+        <label>Comprimento Reto (metros)</label>
+        <input type="number" id="inpComprimento" step="0.01" value="2.00">
+    </div>
+    <div class="row">
+        <div class="input-group">
+            <label>Gancho (cm)</label>
+            <input type="number" id="inpGancho" step="1" value="10">
+        </div>
+        <div class="input-group">
+            <label>Bitola (Ø)</label>
+            <select id="selBitola">
+                <option value="6.3" data-peso="0.245">6.3 mm (1/4")</option>
+                <option value="8.0" data-peso="0.395">8.0 mm (5/16")</option>
+                <option value="10.0" data-peso="0.617" selected>10.0 mm (3/8")</option>
+                <option value="12.5" data-peso="0.963">12.5 mm (1/2")</option>
+                <option value="16.0" data-peso="1.578">16.0 mm (5/8")</option>
+                <option value="20.0" data-peso="2.466">20.0 mm (3/4")</option>
+                <option value="25.0" data-peso="3.853">25.0 mm (1")</option>
+            </select>
+        </div>
+    </div>
+    <button class="btn-draw" onclick="desenharPorInput()">INSERIR E CENTRALIZAR</button>
+    <div class="stats">
+        Total (c/ ganchos): <b id="totalM">0.00</b> m<br>
+        Peso (CA-50): <b id="totalKg">0.00</b> kg
+    </div>
+    <button style="width: 100%; background: #444; margin-top: 10px;" onclick="limpar()">Limpar</button>
+    <button style="width: 100%; background: #28a745; margin-top: 5px;" onclick="exportarDXF()">Exportar DXF</button>
+</div>
+
+<canvas id="cadCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('cadCanvas');
+    const ctx = canvas.getContext('2d');
+    const ESCALA = 100; 
+    let armaduras = [];
+
+    function redimensionar() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        renderizar();
+    }
+
+    function desenharPorInput() {
+        const compReto = parseFloat(document.getElementById('inpComprimento').value);
+        const ganchoCm = parseFloat(document.getElementById('inpGancho').value) || 0;
+        const ganchoM = ganchoCm / 100;
+        
+        if (!compReto || compReto <= 0) return alert("Insira o comprimento!");
+
+        const opt = document.getElementById('selBitola').options[document.getElementById('selBitola').selectedIndex];
+        
+        // Limpamos para manter sempre apenas a peça atual centralizada (opcional: remova a linha abaixo para acumular)
+        armaduras = []; 
+
+        const xMid = canvas.width / 2;
+        const yMid = canvas.height / 2;
+        
+        const x1 = xMid - (compReto * ESCALA / 2);
+        const x2 = xMid + (compReto * ESCALA / 2);
+
+        armaduras.push({
+            x1, y1: yMid, x2, y2: yMid,
+            compReto, ganchoM,
+            compTotal: compReto + (2 * ganchoM),
+            bitola: opt.value,
+            pesoLinear: parseFloat(opt.dataset.peso)
+        });
+
+        atualizarTotais();
+        renderizar();
+    }
+
+    function atualizarTotais() {
+        let totalM = 0, totalKg = 0;
+        armaduras.forEach(a => {
+            totalM += a.compTotal;
+            totalKg += a.compTotal * a.pesoLinear;
+        });
+        document.getElementById('totalM').innerText = totalM.toFixed(2);
+        document.getElementById('totalKg').innerText = totalKg.toFixed(2);
+    }
+
+    function renderizar() {
+        ctx.fillStyle = "#1a1a1a";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Grid centralizado
+        ctx.strokeStyle = "#222";
+        ctx.beginPath();
+        for(let i=0; i<canvas.width; i+=50) { ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); }
+        for(let i=0; i<canvas.height; i+=50) { ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); }
+        ctx.stroke();
+
+        armaduras.forEach(a => {
+            ctx.strokeStyle = "#ff6b1a";
+            ctx.lineWidth = Math.max(3, a.bitola / 2.5);
+            ctx.lineJoin = "round";
+            const gPx = a.ganchoM * ESCALA;
+
+            ctx.beginPath();
+            ctx.moveTo(a.x1, a.y1 - gPx);
+            ctx.lineTo(a.x1, a.y1);
+            ctx.lineTo(a.x2, a.y2);
+            ctx.lineTo(a.x2, a.y2 - gPx);
+            ctx.stroke();
+            
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 13px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(`Ø ${a.bitola} mm`, (a.x1+a.x2)/2, a.y1 - gPx - 20);
+            ctx.fillText(`L = ${a.compReto}m`, (a.x1+a.x2)/2, a.y1 + 25);
+            if(a.ganchoM > 0) {
+                ctx.fillStyle = "#00bcff";
+                ctx.fillText(`${(a.ganchoM*100).toFixed(0)} cm`, a.x1 - 30, a.y1 - gPx/2);
+                ctx.fillText(`${(a.ganchoM*100).toFixed(0)} cm`, a.x2 + 30, a.y1 - gPx/2);
+            }
+        });
+    }
+
+    function exportarDXF() {
+        if (armaduras.length === 0) return;
+        let dxf = "0\nSECTION\n2\nENTITIES\n";
+        armaduras.forEach(a => {
+            const gM = a.ganchoM;
+            const x1 = (a.x1/ESCALA).toFixed(3);
+            const y1 = (a.y1/ESCALA).toFixed(3);
+            const x2 = (a.x2/ESCALA).toFixed(3);
+            const y2 = (a.y2/ESCALA).toFixed(3);
+            dxf += `0\nLINE\n8\nREBAR_${a.bitola}\n10\n${x1}\n20\n${y1}\n11\n${x1}\n21\n${parseFloat(y1)+gM}\n`;
+            dxf += `0\nLINE\n8\nREBAR_${a.bitola}\n10\n${x1}\n20\n${y1}\n11\n${x2}\n21\n${y2}\n`;
+            dxf += `0\nLINE\n8\nREBAR_${a.bitola}\n10\n${x2}\n20\n${y2}\n11\n${x2}\n21\n${parseFloat(y2)+gM}\n`;
+        });
+        dxf += "0\nENDSEC\n0\nEOF";
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([dxf], {type:'application/dxf'}));
+        link.download = `armadura_Ø${armaduras[0].bitola}.dxf`;
+        link.click();
+    }
+
+    function limpar() { armaduras = []; atualizarTotais(); renderizar(); }
+    window.addEventListener('resize', redimensionar);
+    redimensionar();
+</script>
+
+</body>
+</html>
