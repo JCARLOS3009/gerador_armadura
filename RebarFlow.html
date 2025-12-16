@@ -1,49 +1,54 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+<!-- 
+ * SOFTWARE: RebarFlow 2025
+ * AUTOR: Eng. José Carlos Barreto Filho
+ * COPYRIGHT: © 2025 José Carlos Barreto Filho. Todos os direitos reservados.
+ * 
+ * LICENÇA: USO PROPRIETÁRIO E PRIVADO.
+ * É estritamente proibida a cópia, modificação, redistribuição ou uso comercial 
+ * deste código sem a autorização expressa e por escrito do titular dos direitos.
+ * Protegido pela Lei de Software (Lei nº 9.609/98) e Lei de Direitos Autorais (Lei nº 9.610/98).
+-->
 <head>
     <meta charset="UTF-8">
     <title>RebarFlow 2025 - Eng. José Carlos Barreto Filho</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background: #121212; color: white; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #0f0f0f; color: white; }
         canvas { display: block; cursor: crosshair; }
         
-        /* Painel Lateral */
         .panel { 
             position: absolute; top: 20px; left: 20px; 
-            background: rgba(28, 28, 28, 0.95); padding: 20px; border-radius: 12px; 
-            border: 1px solid #3d3d3d; width: 280px; box-shadow: 0 15px 35px rgba(0,0,0,0.6); z-index: 100;
+            background: rgba(25, 25, 25, 0.98); padding: 22px; border-radius: 12px; 
+            border: 1px solid #444; width: 290px; box-shadow: 0 20px 40px rgba(0,0,0,0.7); z-index: 100;
         }
 
-        h2 { font-size: 18px; margin: 0 0 15px 0; color: #00bcff; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        h2 { font-size: 18px; margin: 0 0 15px 0; color: #00bcff; border-bottom: 1px solid #333; padding-bottom: 10px; font-weight: 600; }
         
         .input-group { margin-bottom: 12px; display: flex; flex-direction: column; gap: 5px; }
         label { font-size: 11px; color: #888; font-weight: bold; text-transform: uppercase; }
         
         input, select, button { 
             padding: 10px; border-radius: 6px; border: 1px solid #333; 
-            background: #222; color: white; font-size: 13px; outline: none;
+            background: #1a1a1a; color: white; font-size: 13px; outline: none;
         }
-
-        input:focus { border-color: #00bcff; }
 
         .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
         button { cursor: pointer; font-weight: bold; border: none; transition: 0.3s; margin-top: 5px; }
-        .btn-draw { background: #007bff; color: white; box-shadow: 0 4px 10px rgba(0,123,255,0.3); }
-        .btn-draw:hover { background: #0056b3; transform: translateY(-1px); }
+        .btn-draw { background: #007bff; color: white; }
+        .btn-draw:hover { background: #0056b3; transform: scale(1.02); }
         
         .stats { 
-            margin-top: 20px; padding: 12px; background: #1a1a1a; border-radius: 6px; 
-            font-size: 13px; border-left: 4px solid #00ff00; line-height: 1.6;
+            margin-top: 15px; padding: 12px; background: #151515; border-radius: 6px; 
+            font-size: 13px; border-left: 4px solid #00ff00;
         }
-        b { color: #00ff00; font-family: 'Consolas', monospace; font-size: 14px; }
+        b { color: #00ff00; font-family: 'Courier New', monospace; }
 
-        /* Rodapé de Direitos Autorais */
         .footer {
             position: absolute; bottom: 15px; width: 100%; text-align: center;
-            font-size: 11px; color: #666; letter-spacing: 0.5px; pointer-events: none;
+            font-size: 11px; color: #555; pointer-events: none; text-transform: uppercase;
         }
-        .footer strong { color: #888; }
     </style>
 </head>
 <body>
@@ -53,13 +58,13 @@
     
     <div class="input-group">
         <label>Comprimento Reto (m)</label>
-        <input type="number" id="inpComprimento" step="0.01" value="2.00">
+        <input type="number" id="inpComprimento" step="0.01" value="2.50">
     </div>
 
     <div class="row">
         <div class="input-group">
             <label>Gancho (cm)</label>
-            <input type="number" id="inpGancho" step="1" value="10">
+            <input type="number" id="inpGancho" step="1" value="12">
         </div>
         <div class="input-group">
             <label>Bitola (Ø)</label>
@@ -74,19 +79,19 @@
         </div>
     </div>
 
-    <button class="btn-draw" onclick="desenharCentralizado()">GERAR DETALHAMENTO</button>
+    <button class="btn-draw" onclick="desenharPeca()">GERAR E CENTRALIZAR</button>
     
     <div class="stats">
-        Comp. Total: <b id="totalM">0.00</b> m<br>
-        Peso (CA-50): <b id="totalKg">0.00</b> kg
+        Comprimento: <b id="totalM">0.00</b> m<br>
+        Peso CA-50: <b id="totalKg">0.00</b> kg
     </div>
 
-    <button style="width: 100%; background: #333; margin-top: 10px;" onclick="limpar()">Limpar Tela</button>
-    <button style="width: 100%; background: #28a745; margin-top: 5px;" onclick="exportarDXF()">Exportar DXF</button>
+    <button style="width: 100%; background: #333; margin-top: 10px;" onclick="limpar()">Limpar</button>
+    <button style="width: 100%; background: #28a745; margin-top: 5px;" onclick="exportarDXF()">Exportar (.DXF)</button>
 </div>
 
 <div class="footer">
-    © 2025 Desenvolvido por <strong>Eng. José Carlos Barreto Filho</strong> • Todos os direitos reservados.
+    © 2025 Eng. José Carlos Barreto Filho • Software sob Licença Proprietária
 </div>
 
 <canvas id="cadCanvas"></canvas>
@@ -94,7 +99,7 @@
 <script>
     const canvas = document.getElementById('cadCanvas');
     const ctx = canvas.getContext('2d');
-    const ESCALA = 120; // Aumentado um pouco para melhor visibilidade
+    const ESCALA = 120; 
     let armaduras = [];
 
     function redimensionar() {
@@ -103,22 +108,19 @@
         renderizar();
     }
 
-    function desenharCentralizado() {
+    function desenharPeca() {
         const compReto = parseFloat(document.getElementById('inpComprimento').value);
         const ganchoCm = parseFloat(document.getElementById('inpGancho').value) || 0;
         const ganchoM = ganchoCm / 100;
         
-        if (!compReto || compReto <= 0) return alert("Por favor, insira um comprimento válido.");
+        if (!compReto || compReto <= 0) return;
 
         const opt = document.getElementById('selBitola').options[document.getElementById('selBitola').selectedIndex];
         
-        // Limpa para manter foco na peça atual centralizada
+        // Centralização
         armaduras = []; 
-
-        // Cálculo do Centro
         const xMid = canvas.width / 2;
         const yMid = canvas.height / 2;
-        
         const x1 = xMid - (compReto * ESCALA / 2);
         const x2 = xMid + (compReto * ESCALA / 2);
 
@@ -145,11 +147,11 @@
     }
 
     function renderizar() {
-        ctx.fillStyle = "#121212";
+        ctx.fillStyle = "#0f0f0f";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Desenhar Grid de Engenharia
-        ctx.strokeStyle = "#1e1e1e";
+        // Grid Técnico
+        ctx.strokeStyle = "#1a1a1a";
         ctx.lineWidth = 1;
         ctx.beginPath();
         for(let i=0; i<canvas.width; i+=40) { ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); }
@@ -157,42 +159,27 @@
         ctx.stroke();
 
         armaduras.forEach(a => {
-            // Sombra para efeito 3D
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = "rgba(255, 107, 26, 0.4)";
-            
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#ff6b1a";
             ctx.strokeStyle = "#ff6b1a";
             ctx.lineWidth = Math.max(4, a.bitola / 2);
-            ctx.lineCap = "round";
             ctx.lineJoin = "round";
             
             const gPx = a.ganchoM * ESCALA;
-
             ctx.beginPath();
-            // Desenho da barra em U (Ganchos para cima)
             ctx.moveTo(a.x1, a.y1 - gPx);
             ctx.lineTo(a.x1, a.y1);
             ctx.lineTo(a.x2, a.y2);
             ctx.lineTo(a.x2, a.y2 - gPx);
             ctx.stroke();
             
-            ctx.shadowBlur = 0; // Remove sombra para textos
-
-            // Rótulos Técnicos
-            ctx.fillStyle = "#ffffff";
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "#fff";
             ctx.font = "bold 14px Segoe UI";
             ctx.textAlign = "center";
-            ctx.fillText(`Ø ${a.bitola} mm`, (a.x1+a.x2)/2, a.y1 - gPx - 30);
-            
+            ctx.fillText(`Ø ${a.bitola} mm`, (a.x1+a.x2)/2, a.y1 - gPx - 25);
             ctx.fillStyle = "#00bcff";
-            ctx.fillText(`${a.compReto}m`, (a.x1+a.x2)/2, a.y1 + 30);
-            
-            if(a.ganchoM > 0) {
-                ctx.font = "11px Consolas";
-                ctx.fillStyle = "#888";
-                ctx.fillText(`${(a.ganchoM*100).toFixed(0)}cm`, a.x1 - 35, a.y1 - gPx/2);
-                ctx.fillText(`${(a.ganchoM*100).toFixed(0)}cm`, a.x2 + 35, a.y1 - gPx/2);
-            }
+            ctx.fillText(`${a.compReto}m`, (a.x1+a.x2)/2, a.y1 + 25);
         });
     }
 
@@ -205,8 +192,6 @@
             const x2 = (a.x2/ESCALA).toFixed(3);
             const y2 = (a.y2/ESCALA).toFixed(3);
             const gM = a.ganchoM;
-            
-            // Exporta as 3 partes do vergalhão
             dxf += `0\nLINE\n8\nREBAR\n10\n${x1}\n20\n${y1}\n11\n${x1}\n21\n${parseFloat(y1)+gM}\n`;
             dxf += `0\nLINE\n8\nREBAR\n10\n${x1}\n20\n${y1}\n11\n${x2}\n21\n${y2}\n`;
             dxf += `0\nLINE\n8\nREBAR\n10\n${x2}\n20\n${y2}\n11\n${x2}\n21\n${parseFloat(y2)+gM}\n`;
@@ -214,7 +199,7 @@
         dxf += "0\nENDSEC\n0\nEOF";
         const link = document.createElement('a');
         link.href = URL.createObjectURL(new Blob([dxf], {type:'application/dxf'}));
-        link.download = `RebarFlow_Export.dxf`;
+        link.download = `RebarFlow_Eng_Barreto.dxf`;
         link.click();
     }
 
